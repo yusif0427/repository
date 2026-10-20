@@ -1,0 +1,12 @@
+{
+  "name": "void-roblox-api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Small server-side proxy for public Roblox profile endpoints",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
