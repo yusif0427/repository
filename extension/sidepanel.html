@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RoxyGPT</title>
+<style>
+:root{color-scheme:dark;--bg:#090b0a;--panel:#111512;--line:#273128;--text:#eef3ec;--muted:#9ba69b;--lime:#c8ff5e;--red:#ffb4a8}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 system-ui,Segoe UI,sans-serif}
+header{position:sticky;top:0;background:#090b0aeb;backdrop-filter:blur(12px);border-bottom:1px solid var(--line);padding:15px;display:flex;align-items:center;justify-content:space-between;z-index:2}
+.logo{font-weight:950;letter-spacing:2px}.logo span{color:var(--lime)}.state{font-size:10px;color:var(--muted);border:1px solid var(--line);border-radius:99px;padding:5px 8px}
+main{padding:14px;display:grid;gap:14px}.card{border:1px solid var(--line);background:var(--panel);border-radius:16px;padding:14px;min-width:0}
+h2{font-size:15px;margin:0 0 10px}p{color:var(--muted);font-size:12px;margin:8px 0;overflow-wrap:anywhere}
+.providers{display:grid;grid-template-columns:1fr 1fr;gap:8px}.provider{background:#0c100d;border:1px solid var(--line);border-radius:12px;padding:12px;text-align:left;color:var(--text);cursor:pointer}.provider b{display:block;font-size:12px}.provider small{display:block;color:var(--muted);font-size:10px;margin-top:5px}
+button.primary{width:100%;border:0;background:var(--lime);color:#12170a;font-weight:850;border-radius:11px;padding:12px;cursor:pointer}
+button:disabled{opacity:.45;cursor:not-allowed}
+.preview{width:100%;max-height:250px;object-fit:contain;background:#070807;border-radius:10px;border:1px solid var(--line);display:none}
+textarea{width:100%;min-height:100px;resize:vertical;background:#090c0a;border:1px solid var(--line);border-radius:11px;padding:11px;color:var(--text);font:inherit;outline:none}textarea:focus{border-color:var(--lime)}
+.notice{border-left:3px solid var(--lime);padding:8px 10px;background:#c8ff5e0c;color:#b8c3b7;font-size:11px}
+#output{white-space:pre-wrap;overflow-wrap:anywhere}.muted{color:var(--muted)}.danger{color:var(--red)}
+</style>
+</head>
+<body>
+<header><div class="logo">ROXY<span>GPT</span></div><div class="state">LOCAL PROTOTYPE</div></header>
+<main>
+<section class="card">
+<h2>Model bağlantıları</h2>
+<div class="providers">
+<button class="provider" id="chatgpt"><b>◉ ChatGPT</b><small id="chatgptStatus">OAuth yapılandırılmadı</small></button>
+<button class="provider" id="gemini"><b>✦ Gemini</b><small id="geminiStatus">Google OAuth yapılandırılmadı</small></button>
+</div>
+<p>Bu butonlar güvenli bağlantı akışı tamamlanana kadar model isteği göndermez.</p>
+</section>
+<section class="card">
+<h2>Sayfa bağlamı</h2>
+<p id="pageInfo">Sağ tık menüsünden “RoxyGPT'ye Sor” seç.</p>
+<img id="preview" class="preview" alt="Gönderilmeden önce ekran görüntüsü önizlemesi">
+<button id="capture" class="primary" type="button">Görünen ekranın görüntüsünü al</button>
+<p>Görüntü sadece önizleme için alınır. Sen ayrıca Gönder demedikçe herhangi bir modele yüklenmez.</p>
+</section>
+<section class="card">
+<h2>Ne sormak istiyorsun?</h2>
+<textarea id="prompt" placeholder="Bu ekrandaki metni açıkla, bu hatayı yorumla…"></textarea>
+<p class="notice">Model OAuth ayarları henüz eklenmedi. Bu prototip gerçek bir AI cevabı uydurmaz veya sahte bağlantı gösterm ez.</p>
+<button id="send" class="primary" disabled>Model bağlantısı gerekli</button>
+</section>
+<section class="card">
+<h2>Durum</h2>
+<div id="output" class="muted">Henüz istek gönderilmedi.</div>
+</section>
+</main>
+<script src="sidepanel.js"></script>
+</body>
+</html>

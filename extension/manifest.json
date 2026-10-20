@@ -1,0 +1,37 @@
+{
+  "manifest_version": 3,
+  "name": "RoxyGPT — Ask about this page",
+  "version": "0.1.0",
+  "description": "Ask about a page or screenshot with a side panel. Provider connections are not configured yet.",
+  "permissions": [
+    "contextMenus",
+    "activeTab",
+    "storage",
+    "sidePanel",
+    "tabs"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Open RoxyGPT",
+    "default_popup": "popup.html"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "commands": {
+    "hide-roxygpt": {
+      "suggested_key": {
+        "default": "Alt+P"
+      },
+      "description": "Hide RoxyGPT panel"
+    },
+    "show-roxygpt": {
+      "suggested_key": {
+        "default": "Alt+L"
+      },
+      "description": "Open RoxyGPT panel"
+    }
+  }
+}
