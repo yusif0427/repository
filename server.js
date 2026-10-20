@@ -53,40 +53,34 @@ const server = http.createServer(async (req, res) => {
   if (saved && saved.expires > now) return send(res, 200, saved.data, origin);
 
   try {
-    const found = await getJson('https://users.roblox.com/v1/usernames/users');
-    // POST-only endpoint: retry with POST below (kept separate to avoid forwarding arbitrary URLs).
-    throw new Error('POST_SEARCH');
-  } catch (_) {
-    try {
-      const searchRes = await fetch('https://users.roblox.com/v1/usernames/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'User-Agent': 'VOID-Roblox-Profile/1.0' },
-        body: JSON.stringify({ usernames: [username], excludeBannedUsers: false }),
-        signal: AbortSignal.timeout(9000)
-      });
-      if (!searchRes.ok) throw new Error('Roblox user search unavailable (HTTP ' + searchRes.status + ')');
-      const search = await searchRes.json();
-      const user = search.data && search.data[0];
-      if (!user) return send(res, 404, { error: 'Bu kullanıcı adı bulunamadı.' }, origin);
-      const id = user.id;
-      const urls = {
-        profile: 'https://users.roblox.com/v1/users/' + id,
-        avatar: 'https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=' + id + '&size=180x180&format=Png&isCircular=false',
-        friends: 'https://friends.roblox.com/v1/users/' + id + '/friends/count',
-        followers: 'https://friends.roblox.com/v1/users/' + id + '/followers/count',
-        following: 'https://friends.roblox.com/v1/users/' + id + '/followings/count',
-        favorites: 'https://games.roblox.com/v2/users/' + id + '/favorite/games?sortOrder=Desc&limit=10'
-      };
-      const entries = await Promise.all(Object.entries(urls).map(async ([key, target]) => {
-        try { return [key, await getJson(target)]; } catch { return [key, null]; }
-      }));
-      const result = { user, data: Object.fromEntries(entries) };
-      cache.set(cacheKey, { data: result, expires: Date.now() + 120000 });
-      if (cache.size > 500) cache.delete(cache.keys().next().value);
-      return send(res, 200, result, origin);
-    } catch (err) {
-      return send(res, 502, { error: 'Roblox veri servisine şu an ulaşılamıyor. Biraz sonra tekrar dene.' }, origin);
-    }
+    const searchRes = await fetch('https://users.roblox.com/v1/usernames/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'User-Agent': 'VOID-Roblox-Profile/1.0' },
+      body: JSON.stringify({ usernames: [username], excludeBannedUsers: false }),
+      signal: AbortSignal.timeout(9000)
+    });
+    if (!searchRes.ok) throw new Error('Roblox user search unavailable (HTTP ' + searchRes.status + ')');
+    const search = await searchRes.json();
+    const user = search.data && search.data[0];
+    if (!user) return send(res, 404, { error: 'Bu kullanıcı adı bulunamadı.' }, origin);
+    const id = user.id;
+    const urls = {
+      profile: 'https://users.roblox.com/v1/users/' + id,
+      avatar: 'https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=' + id + '&size=180x180&format=Png&isCircular=false',
+      friends: 'https://friends.roblox.com/v1/users/' + id + '/friends/count',
+      followers: 'https://friends.roblox.com/v1/users/' + id + '/followers/count',
+      following: 'https://friends.roblox.com/v1/users/' + id + '/followings/count',
+      favorites: 'https://games.roblox.com/v2/users/' + id + '/favorite/games?sortOrder=Desc&limit=10'
+    };
+    const entries = await Promise.all(Object.entries(urls).map(async ([key, target]) => {
+      try { return [key, await getJson(target)]; } catch { return [key, null]; }
+    }));
+    const result = { user, data: Object.fromEntries(entries) };
+    cache.set(cacheKey, { data: result, expires: Date.now() + 120000 });
+    if (cache.size > 500) cache.delete(cache.keys().next().value);
+    return send(res, 200, result, origin);
+  } catch (err) {
+    return send(res, 502, { error: 'Roblox veri servisine şu an ulaşılamıyor. Biraz sonra tekrar dene.' }, origin);
   }
 });
 server.listen(PORT, '0.0.0.0', () => console.log('VOID Roblox API listening on ' + PORT));
