@@ -52,35 +52,23 @@ function animate(){ctx.clearRect(0,0,w,h);for(const p of points){p.y-=p.v;if(p.y
 resize();animate();addEventListener('resize',resize);
 if('IntersectionObserver'in window&&!reduce){const io=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');io.unobserve(e.target)}}),{threshold:.12});document.querySelectorAll('.reveal').forEach(el=>io.observe(el))}else document.querySelectorAll('.reveal').forEach(el=>el.classList.add('visible'));
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function robloxAvatar(id){return 'https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds='+encodeURIComponent(id)+'&size=180x180&format=Png&isCircular=false'}
+const API_BASE='https://void-roblox-api.onrender.com';
 $('lookupForm').addEventListener('submit',async e=>{
  e.preventDefault();const username=$('userId').value.trim(),box=$('result'),btn=$('searchBtn');
  box.className='result show';box.innerHTML='<p class="resultmsg">⟳ Roblox profili aranıyor…</p>';
  if(!/^[A-Za-z0-9_]{3,20}$/.test(username)){box.innerHTML='<p class="resultmsg" style="color:var(--red)">3–20 karakterlik geçerli bir Roblox kullanıcı adı gir. Boşluk kullanma.</p>';return}
  btn.disabled=true;btn.textContent='Aranıyor…';
  try{
-  const resolve=await fetch('https://users.roblox.com/v1/usernames/users',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({usernames:[username],excludeBannedUsers:false})});
-  if(!resolve.ok)throw new Error('Roblox kullanıcı arama servisine erişilemedi. Biraz sonra tekrar dene.');
-  const found=await resolve.json(),u=found.data&&found.data[0];
-  if(!u)throw new Error('Bu kullanıcı adı bulunamadı. Yazımı kontrol et.');
-  const id=u.id;
-  const endpoints=[
-   ['profile','https://users.roblox.com/v1/users/'+id],
-   ['avatar','https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds='+id+'&size=180x180&format=Png&isCircular=false'],
-   ['friends','https://friends.roblox.com/v1/users/'+id+'/friends/count'],
-   ['followers','https://friends.roblox.com/v1/users/'+id+'/followers/count'],
-   ['following','https://friends.roblox.com/v1/users/'+id+'/followings/count'],
-   ['favorites','https://games.roblox.com/v2/users/'+id+'/favorite/games?sortOrder=Desc&limit=10']
-  ];
-  const results=await Promise.allSettled(endpoints.map(async ([key,url])=>{const r=await fetch(url,{headers:{'Accept':'application/json'}});if(!r.ok)throw new Error(key);return [key,await r.json()]}));
-  const data={};results.forEach(r=>{if(r.status==='fulfilled')data[r.value[0]]=r.value[1]});
-  const p=data.profile||{},av=data.avatar&&data.avatar.data&&data.avatar.data[0]&&data.avatar.data[0].imageUrl;
+  const response=await fetch(API_BASE+'/api/roblox/user?username='+encodeURIComponent(username),{headers:{'Accept':'application/json'}});
+  const payload=await response.json();
+  if(!response.ok)throw new Error(payload.error||'Profil sorgulanamadı.');
+  const u=payload.user||{},d=payload.data||{},p=d.profile||{},av=d.avatar&&d.avatar.data&&d.avatar.data[0]&&d.avatar.data[0].imageUrl;
   const created=p.created?new Date(p.created).toLocaleDateString('tr-TR',{day:'2-digit',month:'long',year:'numeric'}):'Veri alınamadı';
-  const fmt=v=>Number.isFinite(v)?v.toLocaleString('tr-TR'):'Veri alınamadı';
-  const favorites=data.favorites&&Array.isArray(data.favorites.data)?data.favorites.data:[];
-  const favoriteHtml=favorites.length?'<div class="favoritegrid">'+favorites.map(g=>'<a class="favitem" href="https://www.roblox.com/games/'+encodeURIComponent(g.id)+'" target="_blank" rel="noopener noreferrer"><img loading="lazy" alt="" src="https://thumbnails.roblox.com/v1/games/icons?universeIds='+encodeURIComponent(g.id)+'&size=150x150&format=Png&isCircular=false"><b>'+esc(g.name||'İsimsiz oyun')+'</b><small>Roblox oyununu aç ↗</small></a>').join('')+'</div>':'<p class="resultmsg">Favori oyun listesi bu sorguda alınamadı veya herkese açık değil.</p>';
-  box.innerHTML='<div class="profiletop"><img class="avatar" src="'+esc(av||'https://www.roblox.com/favicon.ico')+'" alt="Roblox avatarı"><div class="profiletitle"><h4>'+esc(p.displayName||u.displayName||u.name)+'</h4><p>@'+esc(p.name||u.name)+' · ID: '+esc(id)+'</p></div><a class="pill" href="https://www.roblox.com/users/'+encodeURIComponent(id)+'/profile" target="_blank" rel="noopener noreferrer">Profili aç ↗</a></div><div class="profilegrid"><div class="stat"><small>Hesap oluşturma</small><b>'+esc(created)+'</b></div><div class="stat"><small>Arkadaş</small><b>'+esc(fmt(data.friends&&data.friends.count))+'</b></div><div class="stat"><small>Takipçi</small><b>'+esc(fmt(data.followers&&data.followers.count))+'</b></div><div class="stat"><small>Takip edilen</small><b>'+esc(fmt(data.following&&data.following.count))+'</b></div><div class="stat"><small>Profil adı</small><b>'+esc(p.displayName||u.displayName||u.name)+'</b></div><div class="stat"><small>Hesap durumu</small><b>'+((p.isBanned)?'Yasaklı':'Normal / bilinmiyor')+'</b></div></div><div class="favheading"><h4>Favori oyunlar</h4><span>HERKESE AÇIK VERİ</span></div>'+favoriteHtml+'<p class="resultmsg">'+esc(p.description||'Bu kullanıcının profil açıklaması yok.')+'</p><p class="resultmsg">Bazı sayılar veya favoriler Roblox API erişimi/CORS sınırları nedeniyle gösterilemeyebilir. Bu araç anonimdir; hesap şifresi istemez.</p>';
- }catch(err){box.innerHTML='<p class="resultmsg" style="color:var(--red)">⌁ '+esc(err.message||'Sorgu başarısız oldu.')+'</p><p class="resultmsg">GitHub Pages tarayıcıdan Roblox API isteklerini engellerse, bunu aşmak için güvenli bir backend gerekir. Roblox şifreni veya çerezlerini hiçbir yere girme.</p>'}
+  const fmt=o=>o&&Number.isFinite(o.count)?o.count.toLocaleString('tr-TR'):'Veri alınamadı';
+  const favorites=d.favorites&&Array.isArray(d.favorites.data)?d.favorites.data:[];
+  const favoriteHtml=favorites.length?'<div class="favoritegrid">'+favorites.map(g=>'<a class="favitem" href="https://www.roblox.com/games/'+encodeURIComponent(g.id)+'" target="_blank" rel="noopener noreferrer"><img loading="lazy" alt="" src="https://thumbnails.roblox.com/v1/games/icons?universeIds='+encodeURIComponent(g.id)+'&size=150x150&format=Png&isCircular=false"><b>'+esc(g.name||'İsimsiz oyun')+'</b><small>Roblox oyununu aç ↗</small></a>').join('')+'</div>':'<p class="resultmsg">Favori oyun listesi alınamadı veya herkese açık değil.</p>';
+  box.innerHTML='<div class="profiletop"><img class="avatar" src="'+esc(av||'https://www.roblox.com/favicon.ico')+'" alt="Roblox avatarı"><div class="profiletitle"><h4>'+esc(p.displayName||u.displayName||u.name||username)+'</h4><p>@'+esc(p.name||u.name||username)+' · ID: '+esc(u.id)+'</p></div><a class="pill" href="https://www.roblox.com/users/'+encodeURIComponent(u.id)+'/profile" target="_blank" rel="noopener noreferrer">Profili aç ↗</a></div><div class="profilegrid"><div class="stat"><small>Hesap oluşturma</small><b>'+esc(created)+'</b></div><div class="stat"><small>Arkadaş</small><b>'+esc(fmt(d.friends))+'</b></div><div class="stat"><small>Takipçi</small><b>'+esc(fmt(d.followers))+'</b></div><div class="stat"><small>Takip edilen</small><b>'+esc(fmt(d.following))+'</b></div><div class="stat"><small>Profil adı</small><b>'+esc(p.displayName||u.displayName||u.name||username)+'</b></div><div class="stat"><small>Hesap durumu</small><b>'+(p.isBanned?'Yasaklı':'Normal / bilinmiyor')+'</b></div></div><div class="favheading"><h4>Favori oyunlar</h4><span>HERKESE AÇIK VERİ</span></div>'+favoriteHtml+'<p class="resultmsg">'+esc(p.description||'Bu kullanıcının profil açıklaması yok.')+'</p><p class="resultmsg">Anonim sorgulama: Roblox hesabına giriş yapılmadı. Bazı bilgiler Roblox tarafından sunulmayabilir.</p>';
+ }catch(err){box.innerHTML='<p class="resultmsg" style="color:var(--red)">⌁ '+esc(err.message||'Sorgu başarısız oldu.')+'</p><p class="resultmsg">Sunucu ilk istekte uyanıyor olabilir; birkaç saniye sonra tekrar dene.</p>'}
  finally{btn.disabled=false;btn.textContent='Oyuncuyu bul ↗'}
 });
 })();
